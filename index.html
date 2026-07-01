@@ -239,17 +239,17 @@
         <form id="apply-form" style="border:1px solid #26344B;border-radius:8px;background:#0F1622;padding:34px;display:flex;flex-direction:column;gap:20px;">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;" class="r-2col">
             <label style="display:flex;flex-direction:column;gap:8px;font-size:13px;font-weight:600;color:#C4D0DE;">Namn
-              <input type="text" required placeholder="För- och efternamn" style="background:#0C1017;border:1px solid #2A3446;border-radius:6px;padding:13px 14px;color:#F4F7FB;font-size:15px;transition:border-color 0.15s,box-shadow 0.15s;">
+              <input name="name" type="text" required placeholder="För- och efternamn" style="background:#0C1017;border:1px solid #2A3446;border-radius:6px;padding:13px 14px;color:#F4F7FB;font-size:15px;transition:border-color 0.15s,box-shadow 0.15s;">
             </label>
             <label style="display:flex;flex-direction:column;gap:8px;font-size:13px;font-weight:600;color:#C4D0DE;">E-post
-              <input type="email" required placeholder="du@exempel.se" style="background:#0C1017;border:1px solid #2A3446;border-radius:6px;padding:13px 14px;color:#F4F7FB;font-size:15px;transition:border-color 0.15s,box-shadow 0.15s;">
+              <input name="email" type="email" required placeholder="du@exempel.se" style="background:#0C1017;border:1px solid #2A3446;border-radius:6px;padding:13px 14px;color:#F4F7FB;font-size:15px;transition:border-color 0.15s,box-shadow 0.15s;">
             </label>
           </div>
           <label style="display:flex;flex-direction:column;gap:8px;font-size:13px;font-weight:600;color:#C4D0DE;">Telefon
-            <input type="tel" placeholder="07X-XXX XX XX" style="background:#0C1017;border:1px solid #2A3446;border-radius:6px;padding:13px 14px;color:#F4F7FB;font-size:15px;transition:border-color 0.15s,box-shadow 0.15s;">
+            <input name="phone" type="tel" placeholder="07X-XXX XX XX" style="background:#0C1017;border:1px solid #2A3446;border-radius:6px;padding:13px 14px;color:#F4F7FB;font-size:15px;transition:border-color 0.15s,box-shadow 0.15s;">
           </label>
           <label style="display:flex;flex-direction:column;gap:8px;font-size:13px;font-weight:600;color:#C4D0DE;">Hur mycket tid kan du lägga per vecka?
-            <select required style="background:#0C1017;border:1px solid #2A3446;border-radius:6px;padding:13px 14px;color:#F4F7FB;font-size:15px;transition:border-color 0.15s,box-shadow 0.15s;">
+            <select name="weekly_hours" required style="background:#0C1017;border:1px solid #2A3446;border-radius:6px;padding:13px 14px;color:#F4F7FB;font-size:15px;transition:border-color 0.15s,box-shadow 0.15s;">
               <option value="">Välj ett alternativ</option>
               <option>Under 5 timmar</option>
               <option>5–10 timmar</option>
@@ -258,9 +258,10 @@
             </select>
           </label>
           <label style="display:flex;flex-direction:column;gap:8px;font-size:13px;font-weight:600;color:#C4D0DE;">Vad vill du uppnå?
-            <textarea rows="4" placeholder="Berätta kort om ditt mål och varför du vill vara med." style="background:#0C1017;border:1px solid #2A3446;border-radius:6px;padding:13px 14px;color:#F4F7FB;font-size:15px;resize:vertical;transition:border-color 0.15s,box-shadow 0.15s;"></textarea>
+            <textarea name="goal" rows="4" placeholder="Berätta kort om ditt mål och varför du vill vara med." style="background:#0C1017;border:1px solid #2A3446;border-radius:6px;padding:13px 14px;color:#F4F7FB;font-size:15px;resize:vertical;transition:border-color 0.15s,box-shadow 0.15s;"></textarea>
           </label>
-          <button type="submit" style="font-family:'Space Grotesk',sans-serif;font-size:17px;font-weight:600;color:#0C1017;background:#5B8DEF;border:none;padding:16px;border-radius:6px;cursor:pointer;box-shadow:0 10px 30px -10px rgba(91,141,239,0.6);">Skicka ansökan</button>
+          <button type="submit" id="apply-submit-btn" style="font-family:'Space Grotesk',sans-serif;font-size:17px;font-weight:600;color:#0C1017;background:#5B8DEF;border:none;padding:16px;border-radius:6px;cursor:pointer;box-shadow:0 10px 30px -10px rgba(91,141,239,0.6);">Skicka ansökan</button>
+          <p id="apply-error" style="display:none;font-size:13px;color:#e2a06b;margin:0;text-align:center;"></p>
           <p style="font-size:12px;color:#6C7888;margin:0;text-align:center;">Vi delar aldrig dina uppgifter. Du binder dig inte till något genom att ansöka.</p>
         </form>
       </div>
@@ -339,9 +340,46 @@
 
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-  document.getElementById('apply-form').addEventListener('submit', function(e) {
+  // Fyll i med ditt Supabase-projekts URL och anon (public) key.
+  // Anon-nyckeln är avsedd att vara publik — RLS-policyn på 'applications'
+  // tillåter bara insert, ingen kan läsa tillbaka ansökningar med den.
+  var SUPABASE_URL = 'https://yjxvjunpftfhcmcfcxny.supabase.co';
+  var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlqeHZqdW5wZnRmaGNtY2ZjeG55Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5MTk0NDQsImV4cCI6MjA5ODQ5NTQ0NH0.7vlQJHT7mZQ9XZyh_C5k19prUDjpEZJoHfL-Xmfddns';
+
+  var supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  document.getElementById('apply-form').addEventListener('submit', async function(e) {
     e.preventDefault();
+    var form = e.target;
+    var btn = document.getElementById('apply-submit-btn');
+    var errorEl = document.getElementById('apply-error');
+    errorEl.style.display = 'none';
+    btn.disabled = true;
+    btn.textContent = 'Skickar…';
+
+    var payload = {
+      name: form.name.value,
+      email: form.email.value,
+      phone: form.phone.value || null,
+      weekly_hours: form.weekly_hours.value,
+      goal: form.goal.value || null,
+    };
+
+    var { error } = await supabaseClient.from('applications').insert(payload);
+
+    btn.disabled = false;
+    btn.textContent = 'Skicka ansökan';
+
+    if (error) {
+      errorEl.textContent = error.code === '23505'
+        ? 'Den här e-postadressen har redan ansökt.'
+        : 'Något gick fel. Försök igen om en stund.';
+      errorEl.style.display = 'block';
+      return;
+    }
+
     document.getElementById('form-wrap').style.display = 'none';
     document.getElementById('success-wrap').style.display = 'block';
   });
